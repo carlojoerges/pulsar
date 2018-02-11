@@ -12,7 +12,7 @@ The original artwork of the album is a visualisation of the radio signal emitted
 
 
 
-<img src="./UnknownPleasuresMap.jpg" >
+<img src="./UnknownPleasuresMap.jpg" width="100%">
 
 *The bitmap that was used to create the raster above*
 
