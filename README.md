@@ -32,10 +32,9 @@ The original artwork of the album is a visualisation of the radio signal emitted
 | 🔥 | Description |
 | --- | --- |
 | **Line raster straight...** | Rasterizes a bitmap layer with straight lines, similar to the original Joy Division album cover. |
-| **Line raster isometric...** | Rasterizes a bitmpa layer with lines using an isometric projection. The plugin asks for the following inputs: **Density, Depth, View angle, Rotation**. 
-|
+| **Line raster isometric...** | Rasterizes a bitmpa layer with lines using an isometric projection. The plugin asks for the following inputs: **Density, Depth, View angle, Rotation**. |
 
-# Installation
+## Installation
 
 [Download](https://github.com/carlojoerges/pulsar/archive/master.zip) or
 clone the latest version of this project, and open `Pulsar.sketchplugin`.
@@ -47,3 +46,5 @@ clone the latest version of this project, and open `Pulsar.sketchplugin`.
 * Follow [@carlojoerges](https://twitter.com/carlojoerges) on Twitter
 
 [![Twitter Follow](https://img.shields.io/twitter/follow/carlojoerges.svg?style=social&label=Follow)]()
+
+MIT License © Carlo Joerges.

@@ -1,5 +1,5 @@
 {
-  "author" : "",
+  "author" : "Carlo Joerges",
   "commands" : [
     {
       "script" : "script.cocoascript",
@@ -27,7 +27,7 @@
   },
   "identifier" : "com.example.sketch.f33800be-055a-413b-9d5b-6e7d3bf838bb",
   "version" : "1.0",
-  "description" : "",
-  "authorEmail" : "",
-  "name" : "Raster"
+  "description" : "Sketch Plugin that creates line rasters from bitmaps.",
+  "authorEmail" : "carlo.joerges@gmail.com",
+  "name" : "Pulsar"
 }
