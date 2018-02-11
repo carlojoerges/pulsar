@@ -29,7 +29,7 @@ The original artwork of the album is a visualisation of the radio signal emitted
 
 ## Commands
 
-| 🔥 | Description |
+| 📡 | Description |
 | --- | --- |
 | **Line raster straight...** | Rasterizes a bitmap layer with straight lines, similar to the original Joy Division album cover. |
 | **Line raster isometric...** | Rasterizes a bitmpa layer with lines using an isometric projection. The plugin asks for the following inputs: **Density, Depth, View angle, Rotation**. |
