@@ -1,0 +1,225 @@
+@import './fit-curve.js';
+@import './simplify.js';
+
+var rasterStraight = function(context) {
+  var layer=context.selection.firstObject();
+  rasterize(context, layer);
+};
+var rasterIso = function(context) {
+  var layer=context.selection.firstObject();
+  rasterize(context, layer, projectIso);
+}
+
+function getValue(color) {
+  return (color.redComponent()+color.greenComponent()+color.blueComponent())/3*color.alphaComponent();
+}
+
+function scaleImage(layer, scaleW, scaleH) {
+  var imageRep=NSBitmapImageRep.imageRepWithData(layer.image().data());
+  var origW=imageRep.size().width;
+  var origH=imageRep.size().height;
+  var scaledImage = NSImage.alloc().initWithSize(NSMakeSize(scaleW, scaleH));
+  scaledImage.lockFocus();
+  layer.NSImage().drawInRect_fromRect_operation_fraction(NSMakeRect(0, 0, scaleW, scaleH), NSMakeRect(0, 0, origW, origH), NSCompositeSourceOver, 1.0);
+  scaledImage.unlockFocus();
+  return NSBitmapImageRep.imageRepWithData(scaledImage.TIFFRepresentation());
+}
+
+function drawLine(context,points,start,end) {
+  var path = NSBezierPath.bezierPath();
+  for (var i=0; i<points.length; i+=1) {
+    if (!i) {
+      path.moveToPoint(NSMakePoint(start.x,start.y));
+      path.lineToPoint(NSMakePoint(points[i].x,points[i].y));
+    }
+    path.lineToPoint(NSMakePoint(points[i].x,points[i].y));
+    if (i == points.length-1) {
+      path.lineToPoint(NSMakePoint(end.x,end.y));
+    }
+  }
+  var shape = MSShapeGroup.shapeWithBezierPath(path);
+  var border = shape.style().addStylePartOfType(1);
+  border.color = MSColor.colorWithRGBADictionary({r: 0, g: 0, b: 0, a: 1});
+  border.thickness = 1;
+  var fill = shape.style().addStylePartOfType(0); // `0` constant indicates that we need a `fill` part to be created
+  fill.color = MSColor.colorWithRGBADictionary({r: 1, g: 1, b: 1, a: 1});
+  context.document.currentPage().addLayers([shape]);
+  return shape;
+}
+
+function drawBezier(context,bezier, start, end) {
+  var path = NSBezierPath.bezierPath();
+  for (var i=0; i<bezier.length; i+=1) {
+    if (!i) {
+      path.moveToPoint(NSMakePoint(start.x, start.y));
+      [path lineToPoint:NSMakePoint(bezier[i][0][0],bezier[i][0][1])];
+      [path curveToPoint:NSMakePoint(bezier[i][3][0],bezier[i][3][1]) controlPoint1:NSMakePoint(bezier[i][1][0],bezier[i][1][1]) controlPoint2:NSMakePoint(bezier[i][2][0],bezier[i][2][1])];
+    } else {
+      [path curveToPoint:NSMakePoint(bezier[i][3][0],bezier[i][3][1]) controlPoint1:NSMakePoint(bezier[i][1][0],bezier[i][1][1]) controlPoint2:NSMakePoint(bezier[i][2][0],bezier[i][2][1])];
+    }
+    if (i == bezier.length-1) {
+      [path lineToPoint:NSMakePoint(end.x,end.y)];
+    }
+  }
+  var shape = MSShapeGroup.shapeWithBezierPath(path);
+  var border = shape.style().addStylePartOfType(1);
+  border.color = MSColor.colorWithRGBADictionary({r: 0, g: 0, b: 0, a: 1});
+  border.thickness = 1;
+  var fill = shape.style().addStylePartOfType(0); // `0` constant indicates that we need a `fill` part to be created
+  fill.color = MSColor.colorWithRGBADictionary({r: 1, g: 1, b: 1, a: 1});
+  context.document.currentPage().addLayers([shape]);
+  return shape;
+}
+
+function pointObjectsToArray(points) {
+  return points.map(function (el) {
+    var a = new Array();
+    a.push(parseFloat(el.x,10))
+    a.push(parseFloat(el.y,10))
+    return a;
+  })
+}
+
+function groupLayers(layers) {
+  count = layers.length
+  if (count) {
+    parent = layers[0].parentGroup();
+    groupLayer = MSLayerGroup.new();
+    parent.addLayers([groupLayer]);
+    for (var i = 0; i < count; i++) {
+      parent.removeLayer(layers[i])
+    }
+    groupLayer.addLayers(layers)
+    groupLayer.resizeToFitChildrenWithOption(1)
+    return groupLayer;
+  }
+}
+
+
+function simplifyMovingAvg(points) {
+  var ps = new Array()
+  var angles = new Array();
+  // make an array with angles
+  for (var i=0; i<points.length-1;i++) {
+    var dy = points[i+1].y-points[i].y
+    var dx = points[i+1].x-points[i].x
+    var a = Math.atan2(dy,dx)
+    angles.push(a);
+    if (i == points.length-1) angles.push(a);
+  }
+  
+  var mavg = [];
+  // array with moving averages of angles
+  for (var i=0; i < angles.length; i++) {
+    var l = 3;
+    var sum = angles[i];
+    for (var j=0;j<l;j++) {
+      sum += angles[Math.max(0,i-j)]
+      sum += angles[Math.min(angles.length-1,i+j)]
+    }
+    mavg.push(sum/(l*2+1));
+  }
+  var la = -6;
+  // only keep points where the moving averaged angle is different than the previous ones'
+  for (var i=0; i<points.length;i++) {
+    if (mavg[i] != la) {
+      ps.push(points[i])
+      la = angles[i]
+    }
+  }
+  return ps;
+}
+
+function projectStraight(x,y,z) {
+  return {x:x,y:y+z};
+}
+
+function projectIso(x,y,z,view,rotate) {
+  if (!view) view = 35;
+  if (!rotate) rotate = 45;
+  a = -Math.PI/180.0*view
+  b = Math.PI/180.0*rotate
+  return {
+    // x:(x+y)*Math.cos(-Math.PI/180.0*30.0),
+    // y:z+(x-y)*Math.sin(-Math.PI/180.0*30)
+    // x:(x-y)*Math.cos(Math.PI/180.0*30.0),
+    // y:z+(x+y)*Math.sin(Math.PI/180.0*30)
+    x:Math.cos(b)*x+Math.sin(b)*y,
+    y:Math.sin(a)*Math.sin(b)*x+Math.cos(a)*z-Math.sin(a)*Math.cos(b)*y
+  };
+}
+function rasterize(context, layer, projection) {
+  var density = 20;
+  var depth = 25;
+  var viewAngle = 35;
+  var rotation = 45;
+  var doc = context.document;
+  density = [doc askForUserInput:"Density" initialValue:density]
+  if (!density) return;
+  density = Math.abs(parseInt(density,10));
+  depth = [doc askForUserInput:"Depth" initialValue:depth]
+  if (!depth) return;
+  depth = Math.abs(parseInt(depth,10));
+  depth = depth/100.0;
+
+  if (!projection) {
+    projection = projectStraight;
+  } else {
+    project = projectIso;
+    viewAngle = [doc askForUserInput:"View angle" initialValue:viewAngle]
+    if (!viewAngle) return;
+    viewAngle = Math.abs(parseInt(viewAngle,10));
+    rotation = [doc askForUserInput:"Rotation" initialValue:rotation]
+    if (!rotation) return;
+    rotation = Math.abs(parseInt(rotation,10));
+  }
+
+
+
+  if(layer && layer.isKindOfClass(MSBitmapLayer)) {
+    var outputWidth = [[layer frame] width];
+    var outputHeight = [[layer frame] height];
+
+    imageRep=NSBitmapImageRep.imageRepWithData(layer.image().data());
+    var sourceWidth=imageRep.size().width;
+    var sourceHeight=imageRep.size().height;
+    var scaledWidth;
+    var scaledHeight;
+    var outputScale;
+    
+    outputScale = outputHeight/density;
+    scaledWidth = Math.round(density*sourceWidth/sourceHeight);
+    scaledHeight = density;
+    var scaledImageRep = scaleImage(layer, scaledWidth, scaledHeight)
+    var layers = new Array();
+    for (var y=0; y<scaledHeight; y+=1) {
+      var points = new Array();
+      for (var x=0; x<scaledWidth; x+=1) {
+        val = getValue([scaledImageRep colorAtX:x*2 y:y*2])
+        artboardX = x*outputScale;
+        baseY = y*outputScale;
+        artboardY = baseY+(depth*outputHeight)*val;
+        
+        coords = projection(x*outputScale,y*outputScale,(depth*outputHeight)*val,viewAngle,rotation)
+        points.push(coords)
+        ;
+      }
+
+      var start = projection(0,y*outputScale,(depth*outputHeight),viewAngle,rotation)
+      var end = projection((scaledWidth-1)*outputScale,y*outputScale,(depth*outputHeight),viewAngle,rotation)
+
+      // points = simplify(points, .05)
+      points = simplifyMovingAvg(points);
+      // layers.push(drawLine(context, points, start,end));
+      var pointArray = pointObjectsToArray(points);
+      var bezierCurves = fitCurve(pointArray, 0);
+      layers.push(drawBezier(context, bezierCurves, start,end));
+    }
+  }
+  result = groupLayers(layers);
+  rf = [result frame]
+  rf.setX([[layer frame] x]+[[layer frame] width])
+  rf.setY([[layer frame] y])
+}
+
+

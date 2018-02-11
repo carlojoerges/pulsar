@@ -1,0 +1,33 @@
+{
+  "author" : "",
+  "commands" : [
+    {
+      "script" : "script.cocoascript",
+      "name" : "Line raster straight...",
+      "handlers" : {
+        "run" : "rasterStraight"
+      },
+      "identifier" : "rasterStraight"
+    },
+    {
+      "script" : "script.cocoascript",
+      "name" : "Line raster isometric...",
+      "handlers" : {
+        "run" : "rasterIso"
+      },
+      "identifier" : "rasterIso"
+    }
+  ],
+  "menu" : {
+    "title" : "📡 Pulsar",
+    "items" : [
+      "rasterStraight",
+      "rasterIso"
+    ]
+  },
+  "identifier" : "com.example.sketch.f33800be-055a-413b-9d5b-6e7d3bf838bb",
+  "version" : "1.0",
+  "description" : "",
+  "authorEmail" : "",
+  "name" : "Raster"
+}
