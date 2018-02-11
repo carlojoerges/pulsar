@@ -6,13 +6,13 @@ Sketch Plugin that creates line rasters from bitmap layers. Inspired by the albu
 
 The original artwork of the album is a visualisation of the radio signal emitted by CP 1919, the very first pulsar ever discovered, on 28 November 1967. The rendition was first created by Harold Craft for his PhD thesis. [Read more](https://qz.com/346826/joy-divisions-iconic-album-cover-is-actually-based-on-a-students-chart-from-the-1970s/)
 
-<img src="./UnknownPleasures.svg" >
+<img src="./UnknownPleasures.svg" width="512">
 
 *Reconstruction of the artwork using the plugin*
 
 
 
-<img src="./UnknownPleasuresMap.jpg" width="100%">
+<img src="./UnknownPleasuresMap.jpg">
 
 *The bitmap that was used to create the raster above*
 
